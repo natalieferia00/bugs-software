@@ -1,144 +1,91 @@
-import { Component } from '@angular/core';
-import { SharedModule } from '../../../shared/shared.module';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+
+// PrimeNG y Componentes de Sakai
+import { TableModule } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { CardModule } from 'primeng/card';
+import { DropdownModule } from 'primeng/dropdown';
+import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { Table } from 'primeng/table';
 
 @Component({
-  selector: 'app-mypage',
-  standalone: true,
-  imports: [SharedModule],
-  templateUrl: './mypage.component.html',
-  styleUrl: './mypage.component.css',
-  providers:
-  [MessageService]
+    selector: 'app-mypage',
+    standalone: true,
+    imports: [
+        CommonModule, 
+        FormsModule, 
+        TableModule, 
+        ButtonModule, 
+        InputTextModule, 
+        CardModule, 
+        DropdownModule, 
+        ToastModule
+    ],
+    templateUrl: './mypage.component.html',
+    providers: [MessageService]
 })
-export class MypageComponent {
-  productDialog: boolean = false;
+export class MypageComponent implements OnInit {
+    bugs: any[] = [];
+    nuevoBug: any = { titulo: '', estado: 'Sin comenzar' };
+    readonly CLAVE_LOCAL = 'sakai_bugs_storage_v1';
 
-  deleteProductDialog: boolean = false;
+    // Opciones para las etiquetas de estado
+    estados = [
+        { label: 'Sin comenzar', value: 'Sin comenzar' },
+        { label: 'En proceso', value: 'En proceso' },
+        { label: 'Terminado', value: 'Terminado' }
+    ];
 
-  deleteProductsDialog: boolean = false;
+    constructor(private messageService: MessageService) {}
 
-  products: any[] = [];
+    ngOnInit() {
+        this.cargarDatos();
+    }
 
-  product: any = {};
+    cargarDatos() {
+        const data = localStorage.getItem(this.CLAVE_LOCAL);
+        if (data) {
+            const parsed = JSON.parse(data);
+            // Rehidratar las fechas (convertir string a Date)
+            this.bugs = parsed.map((b: any) => ({ ...b, fecha: new Date(b.fecha) }));
+        } else {
+            this.bugs = [{ titulo: 'Sistema de bugs listo', estado: 'Sin comenzar', fecha: new Date() }];
+            this.guardar();
+        }
+    }
 
-  selectedProducts: any[] = [];
+    agregarBug() {
+        if (this.nuevoBug.titulo.trim()) {
+            const bug = { 
+                titulo: this.nuevoBug.titulo,
+                estado: this.nuevoBug.estado,
+                fecha: new Date() 
+            };
 
-  submitted: boolean = false;
+            this.bugs = [...this.bugs, bug]; // Inmutabilidad para refrescar widgets
+            this.guardar();
+            this.messageService.add({ severity: 'success', summary: 'Sincronizado', detail: 'Bug guardado en LocalStorage' });
+            this.nuevoBug = { titulo: '', estado: 'Sin comenzar' };
+        }
+    }
 
-  cols: any[] = [];
+    cambiarEstado(index: number, nuevoEstado: string) {
+        this.bugs[index].estado = nuevoEstado;
+        this.bugs = [...this.bugs]; 
+        this.guardar();
+        this.messageService.add({ severity: 'info', summary: 'Estado Actualizado', detail: nuevoEstado });
+    }
 
-  statuses: any[] = [];
+    eliminarBug(index: number) {
+        this.bugs = this.bugs.filter((_, i) => i !== index);
+        this.guardar();
+        this.messageService.add({ severity: 'warn', summary: 'Eliminado', detail: 'Registro borrado de memoria' });
+    }
 
-  rowsPerPageOptions = [5, 10, 20];
-
-  constructor( private messageService: MessageService) { }
-
-  ngOnInit() {
-
-
-      this.cols = [
-          { field: 'product', header: 'Product' },
-          { field: 'price', header: 'Price' },
-          { field: 'category', header: 'Category' },
-          { field: 'rating', header: 'Reviews' },
-          { field: 'inventoryStatus', header: 'Status' }
-      ];
-
-      this.statuses = [
-          { label: 'INSTOCK', value: 'instock' },
-          { label: 'LOWSTOCK', value: 'lowstock' },
-          { label: 'OUTOFSTOCK', value: 'outofstock' }
-      ];
-  }
-
-  openNew() {
-      this.product = {};
-      this.submitted = false;
-      this.productDialog = true;
-  }
-
-  deleteSelectedProducts() {
-      this.deleteProductsDialog = true;
-  }
-
-  editProduct(product: any) {
-      this.product = { ...product };
-      this.productDialog = true;
-  }
-
-  deleteProduct(product: any) {
-      this.deleteProductDialog = true;
-      this.product = { ...product };
-  }
-
-  confirmDeleteSelected() {
-      this.deleteProductsDialog = false;
-      this.products = this.products.filter(val => !this.selectedProducts.includes(val));
-      this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Products Deleted', life: 3000 });
-      this.selectedProducts = [];
-  }
-
-  confirmDelete() {
-      this.deleteProductDialog = false;
-      this.products = this.products.filter(val => val.id !== this.product.id);
-      this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product Deleted', life: 3000 });
-      this.product = {};
-  }
-
-  hideDialog() {
-      this.productDialog = false;
-      this.submitted = false;
-  }
-
-  saveProduct() {
-      this.submitted = true;
-
-      if (this.product.name?.trim()) {
-          if (this.product.id) {
-              // @ts-ignore
-              this.product.inventoryStatus = this.product.inventoryStatus.value ? this.product.inventoryStatus.value : this.product.inventoryStatus;
-              this.products[this.findIndexById(this.product.id)] = this.product;
-              this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product Updated', life: 3000 });
-          } else {
-              this.product.id = this.createId();
-              this.product.code = this.createId();
-              this.product.image = 'product-placeholder.svg';
-              // @ts-ignore
-              this.product.inventoryStatus = this.product.inventoryStatus ? this.product.inventoryStatus.value : 'INSTOCK';
-              this.products.push(this.product);
-              this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Product Created', life: 3000 });
-          }
-
-          this.products = [...this.products];
-          this.productDialog = false;
-          this.product = {};
-      }
-  }
-
-  findIndexById(id: string): number {
-      let index = -1;
-      for (let i = 0; i < this.products.length; i++) {
-          if (this.products[i].id === id) {
-              index = i;
-              break;
-          }
-      }
-
-      return index;
-  }
-
-  createId(): string {
-      let id = '';
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      for (let i = 0; i < 5; i++) {
-          id += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return id;
-  }
-
-  onGlobalFilter(table: Table, event: Event) {
-      table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
-  }
+    private guardar() {
+        localStorage.setItem(this.CLAVE_LOCAL, JSON.stringify(this.bugs));
+    }
 }
