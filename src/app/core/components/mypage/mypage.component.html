@@ -1,57 +1,38 @@
 <p-toast></p-toast>
-
 <div class="grid">
     <div class="col-12 md:col-4">
         <div class="card p-fluid">
-            <h5><i class="pi pi-pencil mr-2"></i>Nuevo Reporte</h5>
+            <h5><span class="red-dot-logo mr-2"></span>Nuevo Reporte</h5>
             <div class="field">
                 <label>¿Qué sucedió?</label>
-                <input pInputText type="text" [(ngModel)]="nuevoBug.titulo" (keyup.enter)="agregarBug()" placeholder="Describa el error..." />
+                <input pInputText type="text" [(ngModel)]="nuevoBug.titulo" placeholder="Describa el error..." />
             </div>
             <div class="field">
                 <label>Estado</label>
                 <p-dropdown [options]="estados" [(ngModel)]="nuevoBug.estado"></p-dropdown>
             </div>
-            <button pButton label="Registrar Tarea" icon="pi pi-plus" (click)="agregarBug()" class="p-button-primary"></button>
+            <button pButton label="Registrar Tarea" icon="pi pi-bolt" (click)="agregarBug()"></button>
         </div>
     </div>
 
     <div class="col-12 md:col-8">
         <div class="card">
-            <h5><i class="pi pi-database mr-2"></i>Bugs en LocalStorage</h5>
-            <p-table [value]="bugs" [rows]="6" [paginator]="true" responsiveLayout="scroll">
+            <h5><i class="pi pi-database mr-2"></i>Bugs en MongoDB</h5>
+            <p-table [value]="bugs" [rows]="5" [paginator]="true" responsiveLayout="scroll">
                 <ng-template pTemplate="header">
                     <tr>
                         <th>Descripción</th>
                         <th>Estado</th>
-                        <th>Fecha</th>
-                        <th style="width: 8rem">Acciones</th>
+                        <th>Acciones</th>
                     </tr>
                 </ng-template>
-                <ng-template pTemplate="body" let-bug let-i="rowIndex">
+                <ng-template pTemplate="body" let-bug>
                     <tr>
                         <td>{{bug.titulo}}</td>
+                        <td><span class="customer-badge status-new">{{bug.estado}}</span></td>
                         <td>
-                            <span [class]="'customer-badge ' + 
-                                (bug.estado === 'Terminado' ? 'status-qualified' : 
-                                 bug.estado === 'En proceso' ? 'status-pending' : 'status-new')">
-                                {{bug.estado}}
-                            </span>
+                            <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text" (click)="eliminarBug(bug._id)"></button>
                         </td>
-                        <td class="text-sm">{{bug.fecha | date:'dd/MM HH:mm'}}</td>
-                        <td>
-                            <div class="flex gap-2">
-                                <button pButton icon="pi pi-check" class="p-button-rounded p-button-success p-button-text" 
-                                        (click)="cambiarEstado(i, 'Terminado')"></button>
-                                <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text" 
-                                        (click)="eliminarBug(i)"></button>
-                            </div>
-                        </td>
-                    </tr>
-                </ng-template>
-                <ng-template pTemplate="emptymessage">
-                    <tr>
-                        <td colspan="4" class="text-center p-4">No hay bugs registrados.</td>
                     </tr>
                 </ng-template>
             </p-table>
