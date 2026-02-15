@@ -6,8 +6,8 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class BugService {
-  // Cuando despliegues en Render, cambia esto por la URL que te dé Render
-  private apiUrl = 'http://localhost:3000/api/bugs'; 
+  // ⚠️ ESTE ES EL CAMBIO VITAL:
+  private apiUrl = 'https://backend-bugs.onrender.com/api/bugs'; 
 
   constructor(private http: HttpClient) {}
 
